@@ -1418,52 +1418,11 @@
             }
         }
         
-        // Check and animate cards on scroll
-        function checkAndAnimateCards() {
-            // Animate header first if visible
-            if (reviewsHeader && !reviewsHeader.classList.contains('animated')) {
-                if (isPartiallyVisible(reviewsHeader, 0.3)) {
-                    animateHeader();
-                }
-            }
-            
-            // Animate cards when they come into view
-            reviewCards.forEach((card, index) => {
-                if (isPartiallyVisible(card, 0.2) && !card.classList.contains('animated')) {
-                    animateReviewCard(card, index);
-                }
-            });
-        }
-        
-        // Initial check after page load
-        window.addEventListener('load', () => {
-            setTimeout(checkAndAnimateCards, 100);
-        });
-        
-        // Also check immediately on page load
-        setTimeout(checkAndAnimateCards, 100);
-        
-        // Check on scroll with throttling for performance
-        let scrollTimeout;
-        let ticking = false;
-        
-        function onScroll() {
-            if (!ticking) {
-                window.requestAnimationFrame(() => {
-                    checkAndAnimateCards();
-                    ticking = false;
-                });
-                ticking = true;
-            }
-        }
-        
-        window.addEventListener('scroll', onScroll, { passive: true });
-        
-        // Use IntersectionObserver as primary method for better performance
+        // ONLY USE IntersectionObserver - simpler and more reliable
         if ('IntersectionObserver' in window) {
             const observerOptions = {
-                threshold: 0.15,
-                rootMargin: '0px 0px -50px 0px'
+                threshold: 0.1,
+                rootMargin: '0px 0px -100px 0px'
             };
             
             const observer = new IntersectionObserver((entries) => {
@@ -1494,6 +1453,32 @@
             reviewCards.forEach(card => {
                 observer.observe(card);
             });
+        } else {
+            // Fallback for browsers without IntersectionObserver
+            function checkAndAnimateCards() {
+                const windowHeight = window.innerHeight;
+                
+                // Check header
+                if (reviewsHeader && !reviewsHeader.classList.contains('animated')) {
+                    const rect = reviewsHeader.getBoundingClientRect();
+                    if (rect.top < windowHeight - 100) {
+                        animateHeader();
+                    }
+                }
+                
+                // Check cards
+                reviewCards.forEach((card, index) => {
+                    if (!card.classList.contains('animated')) {
+                        const rect = card.getBoundingClientRect();
+                        if (rect.top < windowHeight - 100) {
+                            animateReviewCard(card, index);
+                        }
+                    }
+                });
+            }
+            
+            // Only use scroll for fallback
+            window.addEventListener('scroll', checkAndAnimateCards, { passive: true });
         }
         
         // Add continuous floating animation to random cards after they're animated
